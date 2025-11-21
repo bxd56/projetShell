@@ -160,4 +160,108 @@ historique_emprunts() {
 }
 
 
+#recherches et filtres
+#------------------ IMANE ---------------------------------
+
+fichier="livres.txt"
+
+recherche_par_titre () {
+[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un titre de livre a rechercher." && exit 1
+local recherche="$1"
+local trouve=0
+
+while IFS='|' read -r id titre auteur annee genre statut; do
+        if echo "$titre" | grep -iq "$recherche"; then
+            echo "ID: $id | Titre: $titre | Auteur: $auteur | Statut: $statut"
+            trouve=1
+        fi
+done < "$fichier"
+if [ "$trouve" -eq 0 ]; then
+ echo "Aucun livre ne correspond au titre : $recherche"
+ return 1
+fi
+}
+
+
+recherche_par_auteur () {
+[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un nom d'auteur a rechercher." && exit 2
+local recherche="$1"
+local trouve=0
+
+while IFS='|' read -r id titre auteur annee genre statut; do
+        if echo "$auteur" | grep -iq "$recherche"; then
+            echo "ID: $id | Titre: $titre | Auteur: $auteur | Statut: $statut"
+            trouve=1
+        fi
+done < "$fichier"
+
+if [ "$trouve" -eq 0 ]; then
+    echo "Aucun auteur ne correspond à : $recherche"
+    return 1
+fi
+}
+
+
+filtrer_par_genre() {
+[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un genre a rechercher." && exit 2
+local recherche="$1"
+local trouve=0
+
+while IFS='|' read -r id titre auteur annee genre statut; do
+        if echo "$genre" | grep -iq "$recherche"; then
+            echo "ID: $id | Titre: $titre | Auteur: $auteur | Genre: $genre | Annee: $annee | Statut: $statut"
+            trouve=1
+        fi
+done < "$fichier"
+
+if [ "$trouve" -eq 0 ]; then
+    echo "Aucun livre n'appartient au genre : $recherche"
+    return 1
+    fi
+return 0
+}
+
+
+filtrer_par_annee() {
+[ "$#" -lt 2 ] && echo "Erreur : Veuillez specifier un intervelle des annees" && exit 3
+local debut="$1"
+local fin="$2"
+local trouve=0
+
+while IFS='|' read -r id titre auteur annee genre statut; do
+    if [ "$annee" -ge "$debut" ] && [ "$annee" -le "$fin" ]; then
+       echo "ID: $id | Titre: $titre | Auteur: $auteur | Genre: $genre | Annee: $annee | Statut: $statut"
+    trouve=1
+    fi
+done < "$fichier"
+if [ "$trouve" -eq 0 ]; then
+    echo "Aucun livre entre $debut et $fin"
+    return 1
+    fi
+}
+
+
+#recherche avance par titre auteur genre
+recherche_avancee() {
+[ "$#" -lt 3 ] && echo "Erreur: Veillez specifier 3 criteres(Titre auteur genre)" && exit 4
+local titre_recherche="$1"
+local auteur_recherche="$2"
+local genre_recherche="$3"
+local trouve=0
+
+while IFS='|' read -r id titre auteur annee genre statut; do
+    if [[ "$titre" == *"$titre_recherche"* ]] && [[ "$auteur" == *"$auteur_recherche"* ]] && [[ "$genre" == *"$genre_recherche"* ]]; then
+       echo "ID: $id | Titre: $titre | Auteur: $auteur | Genre: $genre | Annee: $annee | Statut: $statut"
+       trouve=1
+    fi
+done < "$fichier"
+if [ "$trouve" -eq 0 ]; then
+    echo "Aucun livre ne correspond à : Titre='$titre_recherche', Auteur='$auteur_recherche', Genre='$genre_recherche'"
+    return 1
+fi
+}
+ 
+
+
+
 
