@@ -1,33 +1,142 @@
 #!/bin/bash
 
 
-#Fonction qui permet d'ajouter un livre 
-add_book() {
+#Fonction de gestion des livres (Bochra)
+demander_champ() {
+    local message="$1"
+    local valeur=""
 
-	if [ $# -lt 4 ]
+    while [[ -z "$valeur" ]]; do
+        read -p "$message" valeur
+        if [[ -z "$valeur" ]]; then
+            echo "Erreur : ce champ ne peut pas être vide."
+        fi
+    done
+    echo "$valeur"
+}
+
+ajoute_livre() {
+
+    while true
+	do
+        read -p "Titre : " titre
+        [[ -n "$titre" ]] && break
+        echo "Erreur : le titre ne peut pas être vide."
+    done
+
+    # Auteur obligatoire
+    while true
+	do
+        read -p "Auteur : " auteur
+        [[ -n "$auteur" ]] && break
+        echo "Erreur : l'auteur ne peut pas être vide."
+    done
+
+    # Année obligatoire
+    while true
+	do
+        read -p "Année : " annee
+        [[ -n "$annee" ]] && break
+        echo "Erreur : l'année ne peut pas être vide."
+    done
+
+    # Genre obligatoire
+    while true
+	do
+        read -p "Genre : " genre
+        [[ -n "$genre" ]] && break
+        echo "Erreur : le genre ne peut pas être vide."
+    done
+
+    read -p "Statut (disponible par défaut) : " statut
+    statut=${statut:-disponible}
+
+    local dern_id=`tail -n 1 livres.txt | cut -d '|' -f1`
+
+	if [[ -z "$dern_id" ]]
 	then
-		echo "Usage : add_book <Titre> <Auteur> <Année> <Genre>
-		return 1
+		nouv_id="001"
+	else
+		nouv_id=`printf "%03d" $((10#$dern_id + 1))`
 	fi
 
-	local titre="$1"
-	local auteur="$2"
-	local annee="$3"
-	local genre="$4"
-	local genre="disponible"
+    echo "${nouv_id}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> livres.txt
+	echo "Livre ajouté avec l'ID : $nouv_id"
 
-	echo "Ajout de $titre dans livres.txt"
+}
+demander_modification() {
+    local message="$1"
+    local valeur_actuelle="$2"
+    local valeur_lue
 
-	echo "${titre}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> livres.txt
+    read -p "$message [$valeur_actuelle] : " valeur_lue
+    # si vide, on garde l'ancienne valeur
+    echo "${valeur_lue:-$valeur_actuelle}"
+}
+modifier_livre() {
+    while true
+    do
+        read -p "Entrez l'ID du livre (ou e pour sortir) : " id
+
+        if [[ "$id" = "e" ]]; then
+            echo "Sortie."
+            return 0 
+        fi
+
+        if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+            echo "Erreur : l'ID doit être un nombre."
+            continue
+        fi
+
+        ligne=$(grep -E "^$id\|" livres.txt)
+
+        if [[ -n "$ligne" ]]; then
+            echo "Livre trouvé : $ligne"
+            break  
+        else
+            echo "Aucun livre trouvé avec cet ID. Réessayez."
+        fi
+    done
+
+    echo "Pour chaque champ, tapez la nouvelle information ou appuyez sur Entrée si vous ne voulez pas modifier."
+
+    _id=$(echo "$ligne" | cut -d'|' -f1)
+    _titre=$(echo "$ligne" | cut -d'|' -f2)
+    _auteur=$(echo "$ligne" | cut -d'|' -f3)
+    _annee=$(echo "$ligne" | cut -d'|' -f4)
+    _genre=$(echo "$ligne" | cut -d'|' -f5)
+    _statut=$(echo "$ligne" | cut -d'|' -f6-)
+
+    titre=$(demander_modification "Titre" "$_titre")
+    auteur=$(demander_modification "Auteur" "$_auteur")
+    annee=$(demander_modification "Année" "$_annee")
+    genre=$(demander_modification "Genre" "$_genre")
+    statut=$(demander_modification "Statut" "$_statut")
+
+    nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
+
+    echo ">$nouvelle_ligne<"
+
+    sed -i.bak "/^$id|/c\\
+    $nouvelle_ligne" 
+    livres.txt
+
+    echo "Livre modifié avec succès !"
 
 }
 
-edit_book(){
+supprime_livre(){
+
+    if [ $# -lt 1 ]
+    then 
+        echo "Usage : delete_book <Id>"
+    fi
+
+    grep -v "^$1|" livres.txt > tmp.txt
+    mv tmp.txt livres.txt
+
 }
 
-delete_book(){}
-
-list_books(){}
 
 
 
