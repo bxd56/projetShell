@@ -17,32 +17,27 @@ demander_champ() {
 
 ajoute_livre() {
 
-    while true
-	do
+    while true; do
         read -p "Titre : " titre
         [[ -n "$titre" ]] && break
         echo "Erreur : le titre ne peut pas être vide."
     done
 
     # Auteur obligatoire
-    while true
-	do
+    while true; do
         read -p "Auteur : " auteur
         [[ -n "$auteur" ]] && break
         echo "Erreur : l'auteur ne peut pas être vide."
     done
 
     # Année obligatoire
-    while true
-	do
+    while true; do
         read -p "Année : " annee
         [[ -n "$annee" ]] && break
         echo "Erreur : l'année ne peut pas être vide."
     done
 
-    # Genre obligatoire
-    while true
-	do
+    while true; do
         read -p "Genre : " genre
         [[ -n "$genre" ]] && break
         echo "Erreur : le genre ne peut pas être vide."
@@ -70,8 +65,45 @@ demander_modification() {
     local valeur_lue
 
     read -p "$message [$valeur_actuelle] : " valeur_lue
-    # si vide, on garde l'ancienne valeur
     echo "${valeur_lue:-$valeur_actuelle}"
+}
+remplacer_ligne_fichier() {
+    local id="$1"
+    local nouvelle_ligne="$2"
+    local fichier="$3"
+    local tmpfile="${fichier}.tmp"
+
+    > "$tmpfile"
+
+    while IFS= read -r l; do
+        if [[ $l == "$id|"* ]]; then
+            echo "$nouvelle_ligne" >> "$tmpfile"
+        else
+            echo "$l" >> "$tmpfile"
+        fi
+    done < "$fichier"
+
+    mv "$tmpfile" "$fichier"
+}
+verifier_doublon() {
+    local id="$1"            
+    local titre="$2"
+    local auteur="$3"
+    local annee="$4"
+    local fichier="$5"
+
+    # Vérifier si un autre livre (ID différent) a déjà le même Titre|Auteur|Année
+    doublon=$(awk -F'|' -v id="$id" -v t="$titre" -v a="$auteur" -v y="$annee" '
+        $1 != id && $2 == t && $3 == a && $4 == y { print $0 }
+    ' "$fichier")
+
+    if [[ -n "$doublon" ]]; then
+        echo "Attention : un livre identique existe déjà :"
+        echo "$doublon"
+        return 1 
+    else
+        return 0 
+    fi
 }
 modifier_livre() {
     while true
@@ -115,11 +147,9 @@ modifier_livre() {
 
     nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
 
-    echo ">$nouvelle_ligne<"
-
-    sed -i.bak "/^$id|/c\\
-    $nouvelle_ligne" 
-    livres.txt
+    [ ! verifier_doublon ] && echo "Ce livre existe déjà" && return 1
+    
+    remplacer_ligne_fichier "$id" "$nouvelle_ligne" "livres.txt"
 
     echo "Livre modifié avec succès !"
 
@@ -127,19 +157,42 @@ modifier_livre() {
 
 supprime_livre(){
 
-    if [ $# -lt 1 ]
-    then 
-        echo "Usage : delete_book <Id>"
-    fi
+    while true
+    do
+        read -p "Entrez l'ID du livre (ou e pour sortir) : " id
 
-    grep -v "^$1|" livres.txt > tmp.txt
+        if [[ "$id" = "e" ]]; then
+            echo "Sortie."
+            return 0 
+        fi
+
+        if ! [[ "$id" =~ ^[0-9]+$ ]]; then
+            echo "Erreur : l'ID doit être un nombre."
+            continue
+        fi
+
+        ligne=$(grep -E "^$id\|" livres.txt)
+
+        if [[ -n "$ligne" ]]; then
+            echo "Livre trouvé : $ligne"
+            break  
+        else
+            echo "Aucun livre trouvé avec cet ID. Réessayez."
+        fi
+    done
+    
+    grep -v "^$id|" livres.txt > tmp.txt
     mv tmp.txt livres.txt
 
+    echo "Livre supprimé !"
+
 }
+lister_livres() {
+    
+    echo "Voici la liste des livres dans la bibliothèques"
+    cat livres.txt
 
-
-
-
+}
 #4 emprunts:
 #---------------------------raja----------------------------------
 
