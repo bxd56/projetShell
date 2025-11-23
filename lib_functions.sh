@@ -423,6 +423,172 @@ if [ "$trouve" -eq 0 ]; then
 fi
 }
  
+# =================================================================
+# 3. STATISTIQUES ET RAPPORTS (Imene)
+# =================================================================
+
+# 3.1 Nombre total de livres
+stats_total() {
+    echo "--- Nombre total de livres ---"
+    if [ -s "livres.txt" ]; then
+        local total_livres=$(wc -l < livres.txt | xargs)
+        echo "Nombre Total de livres : $total_livres livres enregistrés."
+    else
+        echo "Le fichier livres.txt est vide ou n'existe pas."
+    fi
+}
+
+# 3.2 Répartition par genre (Graphique ASCII)
+stats_genre() {
+    echo "--- Répartition des livres par genre (Graphique ASCII) ---"
+    if [ ! -s "livres.txt" ]; then
+        echo "Le fichier livres.txt est vide ou n'existe pas."
+        return
+    fi
+
+    # 1. Compter les genres (5ème champ)
+    local genres_counts=$(awk -F'|' '{print $5}' livres.txt | sort | uniq -c | sort -nr)
+    
+    if [ -z "$genres_counts" ]; then
+        echo "Aucun genre trouvé."
+        return
+    fi
+
+    local max_count=$(echo "$genres_counts" | head -n 1 | awk '{print $1}')
+    local echelle_max=50 
+    local total_livres=$(wc -l < livres.txt | xargs)
+
+    echo "Genres / Nombre de livres :"
+    echo "$genres_counts" | while IFS= read -r line; do
+        local count=$(echo "$line" | awk '{print $1}')
+        local genre=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
+        
+        # Calcul du pourcentage et de la longueur de la barre (utilise bc pour le calcul flottant)
+        local pourcentage=$(echo "scale=1; ($count / $total_livres) * 100" | bc)
+        local longueur_barre=$(echo "scale=0; ($count * $echelle_max) / $max_count" | bc)
+        
+        # Afficher le genre, le compte et le graphique (█ est le caractère barre)
+        printf "%-20s (%3s livres - %5.1f%%) : %s\n" "$genre" "$count" "$pourcentage" "$(printf '█%.0s' $(seq 1 $longueur_barre))"
+    done
+}
+
+# 3.3 Top 5 auteurs les plus présents
+top_auteurs() {
+    echo "--- Top 5 Auteurs ---"
+    if [ ! -s "livres.txt" ]; then
+        echo "Le fichier livres.txt est vide ou n'existe pas."
+        return
+    fi
+
+    # Extraire et compter les auteurs (3ème champ), trier et prendre le top 5
+    awk -F'|' '{print $3}' livres.txt | sort | uniq -c | sort -nr | head -n 5 | while IFS= read -r line; do
+        local count=$(echo "$line" | awk '{print $1}')
+        local auteur=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
+        printf "%s livres : %s\n" "$count" "$auteur"
+    done
+}
+
+# 3.4 Livres par décennie
+stats_decennies() {
+    echo "--- Livres par décennie ---"
+    if [ ! -s "livres.txt" ]; then
+        echo "Le fichier livres.txt est vide ou n'existe pas."
+        return
+    fi
+    
+    # Calcule la décennie (ex: 1984 -> 1980), compte et trie
+    awk -F'|' '
+        /^[0-9]*\|.*\|.*\|[0-9]{4}\|/ {
+            decennie = int($4/10)*10; 
+            print decennie
+        }
+    ' livres.txt | sort -n | uniq -c | sort -n | while IFS= read -r line; do
+        local count=$(echo "$line" | awk '{print $1}')
+        local debut=$(echo "$line" | awk '{print $2}')
+        local fin=$((debut + 9)) 
+        printf "Années %s-%s : %s livres\n" "$debut" "$fin" "$count"
+    done
+}
+
+# 3.5 Export des résultats en HTML ou PDF
+export_html_pdf() {
+    echo "--- Export des résultats ---"
+    read -p "Format d'export (html/h ou pdf/p) : " format
+
+    case "$format" in
+        html|H|h) format="html";;
+        pdf|P|p) format="pdf";;
+        *) echo "Format non reconnu. Annulation de l'export."; return;;
+    esac
+
+    read -p "Nom du fichier de sortie (par défaut: rapport_bibliotheque) : " nom_fichier
+    local fichier_sortie="${nom_fichier:-rapport_bibliotheque}.${format}"
+
+    if [ "$format" = "html" ]; then
+        echo "Création du fichier HTML : $fichier_sortie"
+        
+        # Début du fichier HTML (utilisation de Here Document)
+        cat <<EOT > "$fichier_sortie"
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><title>Rapport Bibliothèque</title>
+<style> table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 10px; text-align: left; } th { background-color: #f2f2f2; } pre { background-color: #eee; padding: 15px; } </style>
+</head>
+<body><h1>Rapport de la Bibliothèque Personnelle</h1>
+<h2>Liste des Livres</h2>
+<table>
+    <tr><th>ID</th><th>Titre</th><th>Auteur</th><th>Année</th><th>Genre</th><th>Statut</th></tr>
+EOT
+        
+        # Ajout des données de livres.txt
+        if [ -s "livres.txt" ]; then
+            awk -F'|' '{ print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td><td>" $4 "</td><td>" $5 "</td><td>" $6 "</td></tr>" }' livres.txt >> "$fichier_sortie"
+        else
+            echo "<tr><td colspan='6'>Aucun livre enregistré.</td></tr>" >> "$fichier_sortie"
+        fi
+
+        # Fin du tableau et ajout des statistiques
+        cat <<EOT >> "$fichier_sortie"
+</table>
+<h2>Statistiques</h2>
+<pre>
+EOT
+        
+        # Rediriger la sortie des fonctions statistiques vers le fichier HTML
+        stats_total | grep -v '---' >> "$fichier_sortie"
+        echo "" >> "$fichier_sortie"
+        stats_genre | grep -v '---' | grep -v 'Genres /' >> "$fichier_sortie"
+        echo "" >> "$fichier_sortie"
+        top_auteurs | grep -v '---' >> "$fichier_sortie"
+        echo "" >> "$fichier_sortie"
+        stats_decennies | grep -v '---' >> "$fichier_sortie"
+        
+        # Fermer les balises
+        cat <<EOT >> "$fichier_sortie"
+</pre>
+</body></html>
+EOT
+        
+        echo "✔ Export HTML terminé. Fichier : $fichier_sortie"
+    elif [ "$format" = "pdf" ]; then
+        echo "L'export PDF nécessite un outil externe. Le HTML a été choisi comme livrable pour ce projet."
+    fi
+}
+
+# =================================================================
+# 5. SAUVEGARDE ET BACKUP 
+# =================================================================
+
+backup_manuel() {
+    echo "--- Sauvegarde Manuelle ---"
+    echo "Fonction à implémenter pour créer une archive compressée des fichiers de données."
+}
+
+afficher_backups() {
+    echo "--- Liste des Backups ---"
+    echo "Fonction à implémenter pour lister les backups existants."
+}
+ 
 
 
 
