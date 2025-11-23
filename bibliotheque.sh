@@ -55,7 +55,9 @@ while true; do
             esac
         ;;
 
-        3)
+        
+       3)
+        
             clear
             echo "---- Statistiques ----"
             echo "1. Nombre total de livres"
@@ -67,13 +69,13 @@ while true; do
             read -p "Choix : " c3
 
             case "$c3" in
-                1) stats_total ;;
-                2) stats_genre ;;
-                3) top_auteurs ;;
-                4) stats_decennies ;;
-                5) export_html_pdf ;;
+                1) stats_total ;;       # Appelle votre fonction
+                2) stats_genre ;;       # Appelle votre fonction
+                3) top_auteurs ;;       # Appelle votre fonction
+                4) stats_decennies ;;   # Appelle votre fonction
+                5) export_html_pdf ;;   # Appelle votre fonction 
             esac
-        ;;
+            ;;
 
         4)
             clear
