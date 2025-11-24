@@ -47,10 +47,10 @@ while true; do
             read -p "Choix : " c2
 
             case "$c2" in
-                1) recherche_titre ;;
-                2) recherche_auteur ;;
-                3) filtrer_genre ;;
-                4) filtrer_annee ;;
+                1) recherche_par_titre ;;
+                2) recherche_par_auteur ;;
+                3) filtrer_par_genre ;;
+                4) filtrer_par_annee ;;
                 5) recherche_avancee ;;
             esac
         ;;
