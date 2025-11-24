@@ -282,7 +282,7 @@ retourner_livre() {
     # Remettre le livre comme disponible
     sed -i "s/^$livre_id|\(.*\)|emprunté$/$livre_id|\1|disponible/" livres.txt
 
-    echo "✔ Le livre « $titre » a été retourné avec succès."
+    echo " Le livre « $titre » a été retourné avec succès."
 }
 
 #fonction pour lister les emprunts en cours
@@ -306,7 +306,7 @@ alerte_retards() {
 
     while IFS='|' read -r id emp date_e date_retour; do
         if [[ "$date_retour" < "$today" ]]; then
-            echo "⚠ Livre $id emprunté par $emp en retard depuis $date_retour"
+            echo " Livre $id emprunté par $emp en retard depuis $date_retour"
         fi
     done < emprunts.txt
 }
