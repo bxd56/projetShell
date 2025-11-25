@@ -7,7 +7,7 @@ Créer un système complet de gestion de livres avec fichiers plats
 Arbia Bochra (22408220) : Gestion de livres  
 Talbi Imane : Recherche et filtres  
 Boumghar Imene : Statistiques et rapports  
-Ouali Raja : Emprunts  
+Ouali Raja (22321721): Emprunts  
 
 
 ### Gestion des livres : Bochra
