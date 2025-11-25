@@ -326,6 +326,8 @@ historique_emprunts() {
 #------------------ IMANE ---------------------------------
 
 fichier="livres.txt"
+SEPARATEUR="|"
+SYMBOLE_IGNORER="#"
 
 recherche_par_titre () {
 [ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un titre de livre a rechercher." && exit 1
@@ -403,26 +405,67 @@ if [ "$trouve" -eq 0 ]; then
 }
 
 
-#recherche avance par titre auteur genre
-recherche_avancee() {
-[ "$#" -lt 3 ] && echo "Erreur: Veillez specifier 3 criteres(Titre auteur genre)" && exit 4
-local titre_recherche="$1"
-local auteur_recherche="$2"
-local genre_recherche="$3"
-local trouve=0
-
-while IFS='|' read -r id titre auteur annee genre statut; do
-    if [[ "$titre" == *"$titre_recherche"* ]] && [[ "$auteur" == *"$auteur_recherche"* ]] && [[ "$genre" == *"$genre_recherche"* ]]; then
-       echo "ID: $id | Titre: $titre | Auteur: $auteur | Genre: $genre | Annee: $annee | Statut: $statut"
-       trouve=1
+#recherche avance 
+afficher_livres() {
+    echo -e "\n--- LISTE DE TOUS LES LIVRES ---"
+    if [ ! -s "$fichier" ] || [ $(wc -l < "$fichier") -eq 1 ]; then
+        echo "La bibliothèque est vide."
+        return 0
     fi
-done < "$fichier"
-if [ "$trouve" -eq 0 ]; then
-    echo "Aucun livre ne correspond à : Titre='$titre_recherche', Auteur='$auteur_recherche', Genre='$genre_recherche'"
-    return 1
-fi
+    cat "$fichier" | column -t -s "${SEPARATEUR}"
 }
- 
+
+recherche_avancee() {
+    echo -e "\n--- RECHERCHE AVANCÉE ---"
+    echo "Laissez vide ou entrez '${SYMBOLE_IGNORER}' pour ignorer un critère."
+
+    local titre auteur annee genre statut 
+
+    read -r -p "Titre (contient) : " titre
+    read -r -p "Auteur (contient) : " auteur
+    read -r -p "Année (exacte ou ${SYMBOLE_IGNORER}) : " annee
+    read -r -p "Genre (contient) : " genre
+    read -r -p "Statut (disponible/emprunté ou ${SYMBOLE_IGNORER}) : " statut
+
+    local resultats=$(tail -n +2 "$fichier")
+    local nombre_criteres=0
+
+    if [ ! -z "$titre" ] && [ "$titre" != "$SYMBOLE_IGNORER" ]; then
+        resultats=$(echo "$resultats" | awk -F"${SEPARATEUR}" '{print $0}' | grep -i "${SEPARATEUR}${titre}")
+        nombre_criteres=$((nombre_criteres + 1))
+    fi
+
+    if [ ! -z "$auteur" ] && [ "$auteur" != "$SYMBOLE_IGNORER" ]; then
+        resultats=$(echo "$resultats" | grep -i "${SEPARATEUR}${auteur}${SEPARATEUR}")
+        nombre_criteres=$((nombre_criteres + 1))
+    fi
+
+    if [ ! -z "$annee" ] && [ "$annee" != "$SYMBOLE_IGNORER" ]; then
+        resultats=$(echo "$resultats" | grep -w "${SEPARATEUR}${annee}${SEPARATEUR}")
+        nombre_criteres=$((nombre_criteres + 1))
+    fi
+
+    if [ ! -z "$genre" ] && [ "$genre" != "$SYMBOLE_IGNORER" ]; then
+        resultats=$(echo "$resultats" | grep -i "${SEPARATEUR}${genre}${SEPARATEUR}")
+        nombre_criteres=$((nombre_criteres + 1))
+    fi
+    
+    if [ ! -z "$statut" ] && [ "$statut" != "$SYMBOLE_IGNORER" ]; then
+        resultats=$(echo "$resultats" | grep -i "${SEPARATEUR}${statut}$")
+        nombre_criteres=$((nombre_criteres + 1))
+    fi
+
+    echo -e "\n -- RESULTAT -----"
+    if [ "$nombre_criteres" -eq 0 ]; then
+        echo "[ERREUR] Aucun critere choisi."
+        afficher_livres
+    elif [ -z "$resultats" ]; then
+        echo "Aucun livre trouvé ."
+    else
+        echo "$resultats" | column -t -s "${SEPARATEUR}"
+    fi
+}
+
 # =================================================================
 # 3. STATISTIQUES ET RAPPORTS (Imene)
 # =================================================================
