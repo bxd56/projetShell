@@ -2,6 +2,25 @@
 
 fichier="livres.txt"
 
+_verifier_doublon() {
+
+    local titre="$1"
+    local auteur="$2"
+    local annee="$3"
+    local fichier="$4"
+
+    doublon=`awk -F'|'  -v t="$titre" -v a="$auteur" -v y="$annee" '
+        $2 == t && $3 == a && $4 == y { print $0 }
+    ' "$fichier"`
+
+    if [[ -n "$doublon" ]]; then
+        echo "Attention : un livre identique existe déjà :"
+        echo "$doublon"
+        return 1 
+    else
+        return 0 
+    fi
+}
 ajoute_livre() {
 
     while true
@@ -35,7 +54,10 @@ ajoute_livre() {
     read -p "Statut (disponible par défaut) : " statut
     statut=${statut:-disponible}
 
-    local dern_id=`tail -n 1 livres.txt | cut -d '|' -f1`
+    _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { return 1; }
+
+
+    local dern_id=`tail -n 1 "$fichier" | cut -d '|' -f1`
 
 	if [[ -z "$dern_id" ]]
 	then
@@ -44,7 +66,7 @@ ajoute_livre() {
 		nouv_id=`printf "%03d" $((10#$dern_id + 1))`
 	fi
 
-    echo "${nouv_id}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> livres.txt
+    echo "${nouv_id}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> "$fichier"
 	echo "Livre ajouté avec l'ID : $nouv_id"
 
 }
@@ -74,25 +96,6 @@ _remplacer_ligne_fichier() {
 
     mv "$tmpfile" "$fichier"
 }
-_verifier_doublon() {
-
-    local titre="$1"
-    local auteur="$2"
-    local annee="$3"
-    local fichier="$4"
-
-    doublon=`awk -F'|'  -v t="$titre" -v a="$auteur" -v y="$annee" '
-        $2 == t && $3 == a && $4 == y { print $0 }
-    ' "$fichier"`
-
-    if [[ -n "$doublon" ]]; then
-        echo "Attention : un livre identique existe déjà :"
-        echo "$doublon"
-        return 1 
-    else
-        return 0 
-    fi
-}
 modifier_livre() {
     while true
     do
@@ -108,7 +111,7 @@ modifier_livre() {
             continue
         fi
 
-        ligne=`grep -E "^$id\|" livres.txt`
+        ligne=`grep -E "^$id\|" "$fichier"`
 
         if [[ -n "$ligne" ]]; then
             echo "Livre trouvé : $ligne"
@@ -138,9 +141,9 @@ modifier_livre() {
 
     nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
 
-    _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { echo "Ce livre existe déjà"; return 1; }
+    _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { return 1; }
     
-    _remplacer_ligne_fichier "$id" "$nouvelle_ligne" "livres.txt"
+    _remplacer_ligne_fichier "$id" "$nouvelle_ligne" ""$fichier""
 
     echo "Livre modifié avec succès !"
 
@@ -162,7 +165,7 @@ supprime_livre(){
             continue
         fi
 
-        ligne=`grep -E "^$id\|" livres.txt`
+        ligne=`grep -E "^$id\|" "$fichier"`
 
         if [[ -n "$ligne" ]]; then
             echo "Livre trouvé : $ligne"
@@ -172,8 +175,8 @@ supprime_livre(){
         fi
     done
     
-    grep -v "^$id|" livres.txt > tmp.txt
-    mv tmp.txt livres.txt
+    grep -v "^$id|" "$fichier" > tmp.txt
+    mv tmp.txt "$fichier"
 
     echo "Livre supprimé !"
 
@@ -181,7 +184,7 @@ supprime_livre(){
 lister_livres() {
     
     echo "Voici la liste des livres dans la bibliothèques"
-    cat livres.txt
+    cat "$fichier"
 
 }
 
