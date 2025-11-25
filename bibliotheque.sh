@@ -28,9 +28,9 @@ while true; do
             read -p "Choix : " c1
 
             case "$c1" in
-                1) ajouter_livre ;;
+                1) ajoute_livre ;;
                 2) modifier_livre ;;
-                3) supprimer_livre ;;
+                3) supprime_livre ;;
                 4) lister_livres ;;
             esac
         ;;
