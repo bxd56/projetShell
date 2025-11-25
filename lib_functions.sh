@@ -316,10 +316,11 @@ fichier="livres.txt"
 SEPARATEUR="|"
 SYMBOLE_IGNORER="#"
 
+
 recherche_par_titre () {
-[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un titre de livre a rechercher." && exit 1
-local recherche="$1"
+local recherche
 local trouve=0
+read -r -p "Entrez le titre du livre : " recherche
 
 while IFS='|' read -r id titre auteur annee genre statut; do
         if echo "$titre" | grep -iq "$recherche"; then
@@ -333,12 +334,10 @@ if [ "$trouve" -eq 0 ]; then
 fi
 }
 
-
 recherche_par_auteur () {
-[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un nom d'auteur a rechercher." && exit 2
-local recherche="$1"
+local recherche
 local trouve=0
-
+read -r -p "Entrez le nom d'auteur du livre : " recherche
 while IFS='|' read -r id titre auteur annee genre statut; do
         if echo "$auteur" | grep -iq "$recherche"; then
             echo "ID: $id | Titre: $titre | Auteur: $auteur | Statut: $statut"
@@ -352,12 +351,10 @@ if [ "$trouve" -eq 0 ]; then
 fi
 }
 
-
 filtrer_par_genre() {
-[ "$#" -eq 0 ] && echo "Erreur : Veuillez specifier un genre a rechercher." && exit 2
-local recherche="$1"
+local recherche
 local trouve=0
-
+read -r -p "Entrez le genre du livre : " recherche
 while IFS='|' read -r id titre auteur annee genre statut; do
         if echo "$genre" | grep -iq "$recherche"; then
             echo "ID: $id | Titre: $titre | Auteur: $auteur | Genre: $genre | Annee: $annee | Statut: $statut"
@@ -372,12 +369,12 @@ if [ "$trouve" -eq 0 ]; then
 return 0
 }
 
-
 filtrer_par_annee() {
-[ "$#" -lt 2 ] && echo "Erreur : Veuillez specifier un intervelle des annees" && exit 3
-local debut="$1"
-local fin="$2"
+local debut
+local fin
 local trouve=0
+read -r -p "Veuillez entrer l'année de début (AAAA) : " debut
+read -r -p "Veuillez entrer l'année de fin (AAAA) : " fin
 
 while IFS='|' read -r id titre auteur annee genre statut; do
     if [ "$annee" -ge "$debut" ] && [ "$annee" -le "$fin" ]; then
@@ -389,17 +386,7 @@ if [ "$trouve" -eq 0 ]; then
     echo "Aucun livre entre $debut et $fin"
     return 1
     fi
-}
 
-
-#recherche avance 
-afficher_livres() {
-    echo -e "\n--- LISTE DE TOUS LES LIVRES ---"
-    if [ ! -s "$fichier" ] || [ $(wc -l < "$fichier") -eq 1 ]; then
-        echo "La bibliothèque est vide."
-        return 0
-    fi
-    cat "$fichier" | column -t -s "${SEPARATEUR}"
 }
 
 recherche_avancee() {
@@ -416,6 +403,7 @@ recherche_avancee() {
 
     local resultats=$(tail -n +2 "$fichier")
     local nombre_criteres=0
+
 
     if [ ! -z "$titre" ] && [ "$titre" != "$SYMBOLE_IGNORER" ]; then
         resultats=$(echo "$resultats" | awk -F"${SEPARATEUR}" '{print $0}' | grep -i "${SEPARATEUR}${titre}")
@@ -443,6 +431,7 @@ recherche_avancee() {
     fi
 
     echo -e "\n -- RESULTAT -----"
+
     if [ "$nombre_criteres" -eq 0 ]; then
         echo "[ERREUR] Aucun critere choisi."
         afficher_livres
