@@ -1,5 +1,6 @@
 #!/bin/bash
 
+fichier="livres.txt"
 
 ajoute_livre() {
 
@@ -47,7 +48,7 @@ ajoute_livre() {
 	echo "Livre ajouté avec l'ID : $nouv_id"
 
 }
-demander_modification() {
+_demander_modification() {
     local message="$1"
     local valeur_actuelle="$2"
     local valeur_lue
@@ -55,7 +56,7 @@ demander_modification() {
     read -p "$message [$valeur_actuelle] : " valeur_lue
     echo "${valeur_lue:-$valeur_actuelle}"
 }
-remplacer_ligne_fichier() {
+_remplacer_ligne_fichier() {
     local id="$1"
     local nouvelle_ligne="$2"
     local fichier="$3"
@@ -73,15 +74,15 @@ remplacer_ligne_fichier() {
 
     mv "$tmpfile" "$fichier"
 }
-verifier_doublon() {
-    local id="$1"            
-    local titre="$2"
-    local auteur="$3"
-    local annee="$4"
-    local fichier="$5"
+_verifier_doublon() {
 
-    doublon=`awk -F'|' -v id="$id" -v t="$titre" -v a="$auteur" -v y="$annee" '
-        $1 != id && $2 == t && $3 == a && $4 == y { print $0 }
+    local titre="$1"
+    local auteur="$2"
+    local annee="$3"
+    local fichier="$4"
+
+    doublon=`awk -F'|'  -v t="$titre" -v a="$auteur" -v y="$annee" '
+        $2 == t && $3 == a && $4 == y { print $0 }
     ' "$fichier"`
 
     if [[ -n "$doublon" ]]; then
@@ -126,17 +127,20 @@ modifier_livre() {
     _genre=`echo "$ligne" | cut -d'|' -f5`
     _statut=`echo "$ligne" | cut -d'|' -f6-`
 
-    titre=`demander_modification "Titre" "$_titre"`
-    auteur=`demander_modification "Auteur" "$_auteur"`
-    annee=`demander_modification "Année" "$_annee"`
-    genre=`demander_modification "Genre" "$_genre"`
-    statut=`demander_modification "Statut" "$_statut"`
+    titre=`_demander_modification "Titre" "$_titre"`
+    auteur=`_demander_modification "Auteur" "$_auteur"`
+    annee=`_demander_modification "Année" "$_annee"`
+    genre=`_demander_modification "Genre" "$_genre"`
+    statut=`_demander_modification "Statut" "$_statut"`
+
+    echo "DEBUG: titre=$titre auteur=$auteur annee=$annee fichier=$fichier"
+
 
     nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
 
-    [ ! verifier_doublon ] && echo "Ce livre existe déjà" && return 1
+    _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { echo "Ce livre existe déjà"; return 1; }
     
-    remplacer_ligne_fichier "$id" "$nouvelle_ligne" "livres.txt"
+    _remplacer_ligne_fichier "$id" "$nouvelle_ligne" "livres.txt"
 
     echo "Livre modifié avec succès !"
 
@@ -180,6 +184,7 @@ lister_livres() {
     cat livres.txt
 
 }
+
 #4 emprunts:
 #---------------------------raja----------------------------------
 
