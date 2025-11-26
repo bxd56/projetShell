@@ -83,15 +83,10 @@ _remplacer_ligne_fichier() {
 
     > "$tmpfile"
 
-    while IFS= read -r l; do
-        if [[ $l == "$id|"* ]]; then
-            echo "$nouvelle_ligne" >> "$tmpfile"
-        else
-            echo "$l" >> "$tmpfile"
-        fi
-    done < "$fichier"
-
-    mv "$tmpfile" "$fichier"
+    awk -F'|' -v id="$id" -v nl="$nouvelle_ligne" '
+        $1 == id {print nl; next}
+        {print}
+    ' "$fichier" > "$tmpfile" && mv "$tmpfile" "$fichier"
 }
 modifier_livre() {
     while true
