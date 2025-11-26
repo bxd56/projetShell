@@ -5,7 +5,7 @@ Créer un système complet de gestion de livres avec fichiers plats
 ### Membres 
 
 Arbia Bochra (22408220) : Gestion de livres  
-Talbi Imane : Recherche et filtres  
+Talbi Imane (22408534): Recherche et filtres  
 Boumghar Imene : Statistiques et rapports  
 Ouali Raja (22321721): Emprunts  
 
@@ -47,3 +47,23 @@ Recherche dans livres.txt la première entrée correspondant au titre fourni, et
 
 livre_existe (fonction auxiliaire) :
 Vérifie qu’un ID correspond à un livre existant et que ce livre est disponible. Utilisée pour sécuriser les opérations d’emprunt.
+
+
+#recherche et filtres : imane TALBI 
+
+recherche_par_titre: Demande à l’utilisateur un titre et affiche tous les livres dont le titre contient le mot saisi. Si aucun livre ne correspond, un message indique qu’aucun résultat n’a été trouvé.
+
+recherche_par_auteur: Demande à l’utilisateur un nom d’auteur et affiche tous les livres correspondants. Si aucun auteur ne correspond, un message indique qu’aucun résultat n’a été trouvé.
+
+filtrer_par_genre: Demande un genre et affiche tous les livres appartenant à ce genre. Si aucun livre ne correspond, un message indique qu’aucun résultat n’a été trouvé.
+
+filtrer_par_annee: Demande un intervalle d’années et affiche tous les livres publiés entre ces années. Si aucun livre n’est trouvé dans l’intervalle, un message indique qu’aucun résultat n’a été trouvé.
+
+recherche_avancee : Permet de rechercher des livres en combinant plusieurs critères (titre, auteur, année, genre, statut). L’utilisateur peut ignorer certains critères en entrant un symbole spécial(#) ou de lisser le critère vide. Affiche tous les livres correspondant aux critères ou un message si aucun résultat n’est trouvé.
+
+
+
+
+
+
+
