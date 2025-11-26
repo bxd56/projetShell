@@ -49,7 +49,7 @@ livre_existe (fonction auxiliaire) :
 Vérifie qu’un ID correspond à un livre existant et que ce livre est disponible. Utilisée pour sécuriser les opérations d’emprunt.
 
 
-#recherche et filtres : imane TALBI 
+### Recherche et filtres : imane TALBI 
 
 recherche_par_titre: Demande à l’utilisateur un titre et affiche tous les livres dont le titre contient le mot saisi. Si aucun livre ne correspond, un message indique qu’aucun résultat n’a été trouvé.
 
