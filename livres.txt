@@ -1,2 +1,41 @@
-002|Minecraft|Polo|2023|Aventure|disponible
-003|Minecraft|Shaboun|2025|Comedie|disponible
+001|1984|George Orwell|1949|Dystopie|disponible
+002|Le Petit Prince|Antoine de Saint-Exupery|1943|Conte|disponible
+003|Harry Potter à l’école des sorciers|J.K. Rowling|1997|Fantasy|disponible
+004|L’Étranger|Albert Camus|1942|Roman|disponible
+005|Les Misérables|Victor Hugo|1862|Classique|disponible
+006|Le Seigneur des Anneaux : La Communauté de l’Anneau|J.R.R. Tolkien|1954|Fantasy|disponible
+007|La Peste|Albert Camus|1947|Roman|disponible
+008|Orgueil et Préjugés|Jane Austen|1813|Romance|disponible
+009|Fondation|Isaac Asimov|1951|Science-fiction|disponible
+010|Le Meilleur des Mondes|Aldous Huxley|1932|Dystopie|disponible
+001|1984|George Orwell|1949|Dystopie|disponible
+002|Le Petit Prince|Antoine de Saint-Exupery|1943|Conte|disponible
+003|Harry Potter à l’école des sorciers|J.K. Rowling|1997|Fantasy|disponible
+004|L’Étranger|Albert Camus|1942|Roman|disponible
+005|Les Misérables|Victor Hugo|1862|Classique|disponible
+006|Le Seigneur des Anneaux : La Communauté de l’Anneau|J.R.R. Tolkien|1954|Fantasy|disponible
+007|La Peste|Albert Camus|1947|Roman|disponible
+008|Orgueil et Préjugés|Jane Austen|1813|Romance|disponible
+009|Fondation|Isaac Asimov|1951|Science-fiction|disponible
+010|Le Meilleur des Mondes|Aldous Huxley|1932|Dystopie|disponible
+011|Les Fleurs du Mal|Charles Baudelaire|1857|Poésie|disponible
+012|Moby Dick|Herman Melville|1851|Aventure|disponible
+013|Germinal|Émile Zola|1885|Roman|disponible
+014|Alice au Pays des Merveilles|Lewis Carroll|1865|Conte|disponible
+015|Dracula|Bram Stoker|1897|Horreur|disponible
+016|Le Comte de Monte-Cristo|Alexandre Dumas|1844|Aventure|disponible
+017|Les Trois Mousquetaires|Alexandre Dumas|1844|Aventure|disponible
+018|Jane Eyre|Charlotte Brontë|1847|Romance|disponible
+019|Le Journal d’Anne Frank|Anne Frank|1947|Biographie|disponible
+020|Hamlet|William Shakespeare|1600|Théâtre|disponible
+021|Macbeth|William Shakespeare|1606|Théâtre|disponible
+022|La Divine Comédie|Dante Alighieri|1320|Poésie|disponible
+023|Ulysse|James Joyce|1922|Roman|disponible
+024|Les Raisins de la Colère|John Steinbeck|1939|Roman|disponible
+025|Cien Años de Soledad|Gabriel García Márquez|1967|Roman|disponible
+026|Anna Karénine|Léon Tolstoï|1878|Romance|disponible
+027|Crime et Châtiment|Fiodor Dostoïevski|1866|Roman|disponible
+028|Le Nom de la Rose|Umberto Eco|1980|Policier|disponible
+029|Shining|Stephen King|1977|Horreur|disponible
+030|Le Vieil Homme et la Mer|Ernest Hemingway|1952|Roman|disponible
+031|Les Aventures de Sherlock Holmes|Arthur Conan Doyle|1892|Policier|disponible
