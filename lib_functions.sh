@@ -53,13 +53,10 @@ ajoute_livre() {
 
     read -p "Statut (disponible par défaut) : " statut
     statut=${statut:-disponible}
-
     _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { return 1; }
 
-
     local dern_id=`tail -n 1 "$fichier" | cut -d '|' -f1`
-
-	if [[ -z "$dern_id" ]]
+    if [[ -z "$dern_id" ]]
 	then
 		nouv_id="001"
 	else
@@ -136,9 +133,6 @@ modifier_livre() {
     genre=`_demander_modification "Genre" "$_genre"`
     statut=`_demander_modification "Statut" "$_statut"`
 
-    echo "DEBUG: titre=$titre auteur=$auteur annee=$annee fichier=$fichier"
-
-
     nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
 
     _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { return 1; }
@@ -183,7 +177,7 @@ supprime_livre(){
 }
 lister_livres() {
     
-    echo "Voici la liste des livres dans la bibliothèques"
+    echo "Voici la liste des livres dans la bibliothèque"
     cat "$fichier"
 
 }
