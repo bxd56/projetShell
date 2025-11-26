@@ -64,16 +64,16 @@ while true; do
             echo "2. Répartition par genre (ASCII)"
             echo "3. Top 5 auteurs"
             echo "4. Livres par décennie"
-            echo "5. Export en HTML/PDF"
+            echo "5. Export en HTM"
             echo "0. Retour"
             read -p "Choix : " c3
 
             case "$c3" in
-                1) stats_total ;;       # Appelle votre fonction
-                2) stats_genre ;;       # Appelle votre fonction
-                3) top_auteurs ;;       # Appelle votre fonction
-                4) stats_decennies ;;   # Appelle votre fonction
-                5) export_html_pdf ;;   # Appelle votre fonction 
+                1) stats_total ;;       
+                2) stats_genre ;;       
+                3) top_auteurs ;;       
+                4) stats_decennies ;;   
+                5) export_html ;;   
             esac
             ;;
 
