@@ -459,15 +459,12 @@ recherche_avancee() {
     read -r -p "Genre (contient) : " genre
     read -r -p "Statut (disponible/emprunté ou ${SYMBOLE_IGNORER}) : " statut
 
-    local resultats=$(tail -n +2 "$fichier")
+    local resultats=$(<"$fichier")
     local nombre_criteres=0
-
-
     if [ ! -z "$titre" ] && [ "$titre" != "$SYMBOLE_IGNORER" ]; then
-        resultats=$(echo "$resultats" | awk -F"${SEPARATEUR}" '{print $0}' | grep -i "${SEPARATEUR}${titre}")
+        resultats=$(echo "$resultats" | grep -i "${SEPARATEUR}${titre}")
         nombre_criteres=$((nombre_criteres + 1))
     fi
-
     if [ ! -z "$auteur" ] && [ "$auteur" != "$SYMBOLE_IGNORER" ]; then
         resultats=$(echo "$resultats" | grep -i "${SEPARATEUR}${auteur}${SEPARATEUR}")
         nombre_criteres=$((nombre_criteres + 1))
@@ -492,7 +489,6 @@ recherche_avancee() {
 
     if [ "$nombre_criteres" -eq 0 ]; then
         echo "[ERREUR] Aucun critere choisi."
-        afficher_livres
     elif [ -z "$resultats" ]; then
         echo "Aucun livre trouvé ."
     else
