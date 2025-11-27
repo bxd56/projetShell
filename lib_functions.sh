@@ -580,6 +580,7 @@ recherche_avancee() {
     fi
 }
 
+
 #  STATISTIQUES ET RAPPORTS 
 # =================================IMENE ================================
 
@@ -594,6 +595,7 @@ stats_total() {
     fi
 }
 
+
 # 3.2 Répartition par genre 
 stats_genre() {
     echo "--- Répartition des livres par genre ---"
@@ -603,16 +605,18 @@ stats_genre() {
     fi
 
     # 1. Compter les genres 
-    local genres_counts=$(awk -F'|' '{print $5}' livres.txt | sort | uniq -c | sort -nr)
+    local genres_counts=$(awk -F'|' '{print $5}' livres.txt | sort | uniq -c | awk '{$1=$1; print $0}' | sort -nr)
     
     if [ -z "$genres_counts" ]; then
         echo "Aucun genre trouvé."
         return
     fi
 
+    
+    local total_livres=$(echo "$genres_counts" | awk '{sum += $1} END {print sum}')
+
     local max_count=$(echo "$genres_counts" | head -n 1 | awk '{print $1}')
     local echelle_max=50 
-    local total_livres=$(wc -l < livres.txt | xargs)
 
     echo "Genres / Nombre de livres :"
     echo "$genres_counts" | while IFS= read -r line; do
@@ -634,15 +638,19 @@ top_auteurs() {
     if [ ! -s "livres.txt" ]; then
         echo "Le fichier livres.txt est vide ou n'existe pas."
         return
-    fi*
+    fi
 
-    # Extraire et compter les auteurs trier et prendre le top 5
-    awk -F'|' '{print $3}' livres.txt | sort | uniq -c | sort -nr | head -n 5 | while IFS= read -r line; do
+    local top_list=$(awk -F'|' '$3 ~ /[^[:space:]]/ {print $3}' livres.txt | sort | uniq -c | sort -nr | head -n 5)
+    
+    # Itérer sur la variable stockée top_liste
+    echo "$top_list" | while IFS= read -r line; do
         local count=$(echo "$line" | awk '{print $1}')
         local auteur=$(echo "$line" | awk '{$1=""; print $0}' | xargs)
         printf "%s livres : %s\n" "$count" "$auteur"
     done
 }
+
+
 
 # 3.4 Livres par décennie
 stats_decennies() {
@@ -652,13 +660,16 @@ stats_decennies() {
         return
     fi
     
-    # Calcule la décennie 
-    awk -F'|' '
+    # Calcule la décennie et stocke le résultat dans une variable locale
+    local decennies_counts=$(awk -F'|' '
         /^[0-9]*\|.*\|.*\|[0-9]{4}\|/ {
             decennie = int($4/10)*10; 
             print decennie
         }
-    ' livres.txt | sort -n | uniq -c | sort -n | while IFS= read -r line; do
+    ' livres.txt | sort -n | uniq -c | sort -n)
+    
+    # Itérer sur la variable stockée decennies_counts
+    echo "$decennies_counts" | while IFS= read -r line; do
         local count=$(echo "$line" | awk '{print $1}')
         local debut=$(echo "$line" | awk '{print $2}')
         local fin=$((debut + 9)) 
@@ -666,7 +677,6 @@ stats_decennies() {
     done
 }
 
-# 3.5 Export des résultats en HTML
 export_html() {
     echo "--- Export des résultats en HTML ---"
     
@@ -683,38 +693,77 @@ export_html() {
     cat <<EOT > "$fichier_sortie"
 <!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Rapport Bibliothèque</title>
-<style> table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 10px; text-align: left; } th { background-color: #f2f2f2; } </style>
+<head>
+<meta charset="UTF-8">
+<title>Rapport Bibliothèque</title>
+<style>
+    body { font-family: sans-serif; }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px 10px;
+        text-align: left;
+        word-wrap: break-word;
+    }
+    th:nth-child(1), td:nth-child(1) { width: 5%; }
+    th:nth-child(4), td:nth-child(4) { width: 8%; }
+    th:nth-child(6), td:nth-child(6) { width: 12%; }
+    th { background-color: #f2f2f2; }
+</style>
 </head>
-<body><h1>Rapport de la Bibliothèque Personnelle</h1>
+
+<body>
+<h1>Rapport de la Bibliothèque Personnelle</h1>
 <h2>Liste des Livres</h2>
+
 <table>
-    <tr><th>ID</th><th>Titre</th><th>Auteur</th><th>Année</th><th>Genre</th><th>Statut</th></tr>
+<tr>
+    <th>ID</th>
+    <th>Titre</th>
+    <th>Auteur</th>
+    <th>Année</th>
+    <th>Genre</th>
+    <th>Statut</th>
+</tr>
 EOT
-    
-    # 3. Ajout des données de livres.txt
+
+    # 3. Ajout des données depuis livres.txt 
     if [ -s "livres.txt" ]; then
-        awk -F'|' '{ print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td><td>" $4 "</td><td>" $5 "</td><td>" $6 "</td></tr>" }' livres.txt >> "$fichier_sortie"
+
+
+        awk -F'|' '
+        NF==6 {
+            for(i=1;i<=6;i++) {
+                gsub(/^ +| +$/, "", $i)  # Retire espaces début/fin
+            }
+            print "<tr><td>" $1 "</td><td>" $2 "</td><td>" $3 "</td><td>" $4 "</td><td>" $5 "</td><td>" $6 "</td></tr>"
+        }
+        ' livres.txt >> "$fichier_sortie"
+
     else
         echo "<tr><td colspan='6'>Aucun livre enregistré.</td></tr>" >> "$fichier_sortie"
     fi
 
-    # 4. Fermeture des balises 
     cat <<EOT >> "$fichier_sortie"
 </table>
-</body></html>
+</body>
+</html>
 EOT
-    
-    echo "Export HTML terminé. Fichier : $fichier_sortie"
+
+    echo "Export HTML terminé. Fichier généré : $fichier_sortie"
 }
 
 
 # 5. SAUVEGARDE ET BACKUP 
 
-# Crée une archive compressée du fichier livres.txt (Système de backup quotidien)
+# Crée une archive compressée du fichier livres.txt 
 backup_manuel() {
     local backup_dir="backups"
-    # Format de date pour l'horodatage : YYYYMMDD_HHMMSS
+    # Format de date pour l'horodatage 
     local date_format=$(date +%Y%m%d_%H%M%S)
     local archive_name="${backup_dir}/livres_backup_${date_format}.tar.gz"
 
@@ -726,7 +775,7 @@ backup_manuel() {
         echo "Dossier de backups créé : ${backup_dir}"
     fi
 
-    # Création de l'archive compressée (tar -c: créer, -z: gzip, -f: fichier)
+    # Création de l'archive compressée 
     tar -czf "$archive_name" livres.txt 2>/dev/null
     
     if [ -f "$archive_name" ]; then
@@ -745,7 +794,6 @@ afficher_backups() {
         echo "Aucune sauvegarde trouvée."
     else
         echo "Fichiers de sauvegarde dans '${backup_dir}':"
-        # -l: liste détaillée, -t: trie par date, -h: taille lisible
         ls -lth "$backup_dir" | grep -E 'livres_backup_|total'
     fi
 }
