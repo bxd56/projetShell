@@ -1,6 +1,11 @@
 #!/bin/bash
 source lib_functions.sh
 
+if [[ -f "$fichier" ]]; then
+    sed -i 's/\r$//' "$fichier" 2>/dev/null || \
+    perl -pi -e 's/\r\n/\n/g' "$fichier"  
+fi
+
 while true; do
     clear
     echo "==========================================="
@@ -126,7 +131,4 @@ while true; do
 done
 
 #le script principal
-
 source ./lib_functions.sh
-
-modifier_livre
