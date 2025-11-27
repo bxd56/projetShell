@@ -10,7 +10,16 @@ Boumghar Imene : Statistiques et rapports
 Ouali Raja (22321721): Emprunts  
 
 
-### Gestion des livres : Bochra
+### Gestion des livres : ARBIA Bochra
+
+#### Fonctions intermédiaires :
+
+**_verifier_annee** : Renvoie 0 si l'année est valide, 1 sinon. Prend en paramètre l'entrée de l'utilisateur pour l'année.
+**_verifier_doublons** : Cette fonction prends en paramètre, le titre, l'année, l'auteur et le fichier, afin de chercher s'il existe une ligne avec ces informations. Renvoie 0 si les informations sont pas présentes dans le fichier et 1 sinon.
+**_demander_modifications** : Cette fonction prends en paramètre un message à afficher, et le champ a modifier puis permet de demander à l'utilisateur une valeur pour changer l'ancienne. Si l'utilisateur laisse le champ vide, l'ancienne valeur est renvoyé.
+**_remplacer_ligne_fichier** : Cette fonction prends en paramètre la nouvelle ligne qui remplace celle avec l'ID passée en paramètre (prends aussi le titre, l'auteur, l'année, le genre et le statut) et modifie le fichier livres.txt.
+
+#### Fonctions principales : 
 
 **ajouter_livre** : ajoute un nouveau livre dans livres.txt, et génère un ID. On utilise la commande read , on vérifie que le champ n'est pas vide,et pour l'année on vérifie qu'elle est valide avec la fonction **verifier_annee** ensuite on vérifie que le livre n'existe pas dans le fichier afin de ne pas avoir de doublons grâce à la fonction intermédiaire **verifier_doublons**. S'il existe on sort sinon on reprends le dernier ID crée et on l'incrémente. On finit par ajouter le livre au fichier.
 
