@@ -21,6 +21,32 @@ _verifier_doublon() {
         return 0 
     fi
 }
+verifier_annee() {
+    local annee="$1"
+
+    if [[ -z "$annee" ]]; then
+        echo "Erreur : l'année ne peut pas être vide."
+        return 1
+    fi
+
+    if ! [[ "$annee" =~ ^[0-9]+$ ]]; then
+        echo "Erreur : l'année doit être un nombre."
+        return 1
+    fi
+
+    local annee_courante=$(date +%Y)
+    if (( annee > annee_courante )); then
+        echo "Erreur : l'année ne peut pas être supérieure à $annee_courante."
+        return 1
+    fi
+
+    if (( annee < 0 )); then
+        echo "Erreur : l'année doit être positive."
+        return 1
+    fi
+
+    return 0   
+}
 ajoute_livre() {
 
     while true
@@ -40,8 +66,14 @@ ajoute_livre() {
     while true
     do
         read -p "Année : " annee
-        [[ -n "$annee" ]] && break
-        echo "Erreur : l'année ne peut pas être vide."
+
+        if verifier_annee "$annee"
+        then
+            break
+        else
+            echo "Année non valide"
+
+        fi
     done
 
     while true
@@ -63,7 +95,7 @@ ajoute_livre() {
 		nouv_id=`printf "%03d" $((10#$dern_id + 1))`
 	fi
 
-    echo "${nouv_id}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> "$fichier"
+    echo -e "${nouv_id}|${titre}|${auteur}|${annee}|${genre}|${statut}" >> "$fichier"
 	echo "Livre ajouté avec l'ID : $nouv_id"
 
 }
@@ -89,13 +121,14 @@ _remplacer_ligne_fichier() {
     ' "$fichier" > "$tmpfile" && mv "$tmpfile" "$fichier"
 }
 modifier_livre() {
+
     while true
     do
-        read -p "Entrez l'ID du livre (ou e pour sortir) : " id
+        read -p "Entrez l'ID du livre (ou q pour quitter) : " id
 
-        if [[ "$id" = "e" ]]; then
+        if [[ "$id" = "q" ]]; then
             echo "Sortie."
-            return 0 
+            return 0
         fi
 
         if ! [[ "$id" =~ ^[0-9]+$ ]]; then
@@ -107,7 +140,7 @@ modifier_livre() {
 
         if [[ -n "$ligne" ]]; then
             echo "Livre trouvé : $ligne"
-            break  
+            break
         else
             echo "Aucun livre trouvé avec cet ID. Réessayez."
         fi
@@ -115,27 +148,59 @@ modifier_livre() {
 
     echo "Pour chaque champ, tapez la nouvelle information ou appuyez sur Entrée si vous ne voulez pas modifier."
 
-    _id=`echo "$ligne" | cut -d'|' -f1`
-    _titre=`echo "$ligne" | cut -d'|' -f2`
-    _auteur=`echo "$ligne" | cut -d'|' -f3`
-    _annee=`echo "$ligne" | cut -d'|' -f4`
-    _genre=`echo "$ligne" | cut -d'|' -f5`
-    _statut=`echo "$ligne" | cut -d'|' -f6-`
+    # Extraction et nettoyage des champs
+    _id=`echo "$ligne" | cut -d'|' -f1 | tr -d '\r\n'`
+    _titre=`echo "$ligne" | cut -d'|' -f2 | tr -d '\r\n'`
+    _auteur=`echo "$ligne" | cut -d'|' -f3 | tr -d '\r\n'`
+    _annee=`echo "$ligne" | cut -d'|' -f4 | tr -d '\r\n'`
+    _genre=`echo "$ligne" | cut -d'|' -f5 | tr -d '\r\n'`
+    _statut=`echo "$ligne" | cut -d'|' -f6- | tr -d '\r\n'`
 
+    # Champs texte simples
     titre=`_demander_modification "Titre" "$_titre"`
+    titre=`echo "$titre" | tr -d '\r\n'`
+
     auteur=`_demander_modification "Auteur" "$_auteur"`
-    annee=`_demander_modification "Année" "$_annee"`
+    auteur=`echo "$auteur" | tr -d '\r\n'`
+
+    while true
+    do
+        read -p "Année [$_annee] (Entrée pour garder) : " saisie
+
+        if [[ -z "$saisie" ]]; then
+            annee="$_annee"
+            break
+        fi
+
+        verifier_annee "$saisie"
+        if [[ $? -eq 0 ]]; then
+            annee="$saisie"
+            break
+        fi
+
+        echo "Valeur invalide. Entrez une année valide ou appuyez sur Entrée pour garder : $_annee"
+    done
+    annee=`echo "$annee" | tr -d '\r\n'`
+
     genre=`_demander_modification "Genre" "$_genre"`
+    genre=`echo "$genre" | tr -d '\r\n'`
+
     statut=`_demander_modification "Statut" "$_statut"`
+    statut=`echo "$statut" | tr -d '\r\n'`
 
     nouvelle_ligne="$id|$titre|$auteur|$annee|$genre|$statut"
+    ancienne_ligne="$id|$_titre|$_auteur|$_annee|$_genre|$_statut"
+
+    if [[ "$nouvelle_ligne" == "$ancienne_ligne" ]]; then
+        echo "Aucune modification détectée. Le livre reste inchangé."
+        return 0
+    fi
 
     _verifier_doublon "$titre" "$auteur" "$annee" "$fichier" || { return 1; }
-    
-    _remplacer_ligne_fichier "$id" "$nouvelle_ligne" ""$fichier""
+
+    _remplacer_ligne_fichier "$id" "$nouvelle_ligne" "$fichier"
 
     echo "Livre modifié avec succès !"
-
 }
 
 supprime_livre(){
@@ -171,12 +236,37 @@ supprime_livre(){
 
 }
 lister_livres() {
-    
-    echo "Voici la liste des livres dans la bibliothèque"
-    cat "$fichier"
 
+    read -p "Combien de livres souhaitez vous afficher ? (10 par defaut) " page_user
+    page_size=${page_user:-10}
+
+    local total_lines=$(wc -l < "$fichier")
+    local current_line=1
+
+    # Si le fichier est vide
+    if (( total_lines == 0 )); then
+        echo "Aucun livre enregistré."
+        return
+    fi
+
+    while (( current_line <= total_lines ))
+    do
+        clear
+        echo "Affichage des livres — lignes $current_line à $((current_line + page_size - 1))"
+        echo "-----------------------------------------------------------"
+
+        sed -n "${current_line},$((current_line + page_size - 1))p" "$fichier"
+
+        echo "-----------------------------------------------------------"
+        echo "Page $(( (current_line - 1) / page_size + 1 )) / $(( (total_lines + page_size - 1) / page_size ))"
+        echo "Appuie sur Entrée pour continuer, q pour quitter…"
+        read -r input
+
+        [[ "$input" == "q" ]] && break
+
+        (( current_line += page_size ))
+    done
 }
-
 #4 emprunts:
 #---------------------------raja----------------------------------
 
