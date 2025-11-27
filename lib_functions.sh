@@ -178,26 +178,26 @@ lister_livres() {
 }
 
 #4 emprunts:
-
 #---------------------------raja----------------------------------
 
 #fonction pour emprunter les livres 
 
 emprunter_livre() {
-    local choix livre_id titre dispo emprunteur date_emprunt
+    local choix livre_id titre dispo emprunteur date_emprunt ligne_livre
 
     echo "Rechercher le livre par :"
     echo "1) ID"
     echo "2) Titre"
     read -p "Votre choix (1 ou 2) : " choix
 
-
+    # --- ÉTAPE 1 : Trouver l'ID du livre ---
     if [ "$choix" = "1" ]; then
         read -p "Donnez l'ID du livre : " livre_id
+        # On vérifie si la ligne existe
         titre=$(grep "^$livre_id|" livres.txt | cut -d '|' -f2)
-
+        
         if [ -z "$titre" ]; then
-            echo "Aucun livre trouvé avec cet ID."
+            echo "Erreur : Aucun livre trouvé avec cet ID."
             return
         fi
 
@@ -206,40 +206,106 @@ emprunter_livre() {
         livre_id=$(obtenir_id_par_titre "$titre")
 
         if [ -z "$livre_id" ]; then
-            echo "Aucun livre trouvé avec ce titre."
+            echo "Erreur : Aucun livre trouvé avec ce titre."
             return
         fi
+        # On récupère le vrai titre formaté depuis le fichier
+        titre=$(grep "^$livre_id|" livres.txt | cut -d '|' -f2)
+    else
+        echo "Choix invalide."
+        return
+    fi
+
+    # --- ÉTAPE 2 : Vérifier la disponibilité ---
+    # On récupère la ligne complète pour analyser le dernier champ
+    ligne_livre=$(grep "^$livre_id|" livres.txt)
+    # On suppose que le statut est le 6ème champ (ajustez le $6 si votre fichier a plus/moins de colonnes)
+    dispo=$(echo "$ligne_livre" | awk -F'|' '{print $6}') 
+    
+    # Nettoyage des espaces éventuels (trim)
+    dispo=$(echo "$dispo" | xargs)
+
+    if [ "$dispo" != "disponible" ]; then
+        echo "⛔ Désolé, le livre « $titre » est déjà emprunté (Statut : $dispo)."
+        return
+    fi
+
+    # --- ÉTAPE 3 : Effectuer l'emprunt ---
+    read -p "Nom de l'emprunteur : " emprunteur
+    date_emprunt=$(date +"%Y-%m-%d")
+
+    
+    echo "$livre_id|$emprunteur|$date_emprunt|2025-12-31" >> emprunts.txt
+
+    
+    sed -i "s/^$livre_id|\(.*\)|disponible$/$livre_id|\1|emprunte/" livres.txt
+
+    echo "Le livre « $titre » a été emprunté avec succès."
+}
+
+retourner_livre() {
+    local choix livre_id titre ligne emprunteur date_emprunt date_retour_reelle
+
+    echo "Rechercher le livre à retourner par :"
+    echo "1) ID"
+    echo "2) Titre"
+    read -p "Votre choix (1 ou 2) : " choix
+
+    # --- ÉTAPE 1 : Identifier le livre et l'emprunt ---
+    if [ "$choix" = "1" ]; then
+        read -p "Donnez l'ID du livre : " livre_id
+        
+        # Vérifier s'il est dans la liste des emprunts
+        ligne=$(grep "^$livre_id|" emprunts.txt)
+
+        if [ -z "$ligne" ]; then
+            echo "Erreur : Ce livre n'est pas marqué comme emprunté dans le fichier emprunts."
+            return
+        fi
+        
+        titre=$(grep "^$livre_id|" livres.txt | cut -d '|' -f2)
+
+    elif [ "$choix" = "2" ]; then
+        read -p "Donnez le titre du livre : " titre_input
+        livre_id=$(grep -i "|$titre_input|" livres.txt | cut -d '|' -f1 | head -n 1)
+
+        if [ -z "$livre_id" ]; then
+            echo "Erreur : Livre introuvable."
+            return
+        fi
+
+        ligne=$(grep "^$livre_id|" emprunts.txt)
+        if [ -z "$ligne" ]; then
+            echo "Ce livre n'est actuellement pas emprunté."
+            return
+        fi
+        
+        titre=$(grep "^$livre_id|" livres.txt | cut -d '|' -f2)
 
     else
         echo "Choix invalide."
         return
     fi
 
-    # Récupérer le statut du livre
-    dispo=$(grep "^$livre_id|" livres.txt | awk -F'|' '{print $6}')
+    # --- ÉTAPE 2 : Traiter le retour ---
 
-    # Supprimer espaces éventuels
-    dispo=$(echo "$dispo" | xargs)
+    # Récupération des infos pour l'historique
+    emprunteur=$(echo "$ligne" | cut -d '|' -f2)
+    date_emprunt=$(echo "$ligne" | cut -d '|' -f3)
+    date_retour_reelle=$(date +"%Y-%m-%d")
 
-    if [ "$dispo" != "disponible" ]; then
-        echo "Désolé, le livre « $titre » n'est pas disponible."
-        return
-    fi
+    # 1. Ajouter à l'historique
+    echo "$livre_id|$emprunteur|$date_emprunt|$date_retour_reelle" >> historique.txt
 
+    # 2. Retirer du fichier emprunts.txt (fichier temporaire pour éviter les bugs)
+    grep -v "^$livre_id|" emprunts.txt > emprunts.tmp && mv emprunts.tmp emprunts.txt
 
-    # Emprunteur
-    read -p "Nom de l'emprunteur : " emprunteur
-    date_emprunt=$(date +"%Y-%m-%d")
+    # 3. Remettre le livre comme "disponible" dans livres.txt
+    # La regex cherche l'ID, capture le milieu, cherche 'emprunte' et remplace par 'disponible'
+    sed -i "s/^$livre_id|\(.*\)|emprunte$/$livre_id|\1|disponible/" livres.txt
 
-    # Ajouter à emprunts
-    echo "$livre_id|$emprunteur|$date_emprunt|2025-12-31" >> emprunts.txt
-
-    # Marquer comme emprunté
-    sed -i "s/^$livre_id|\(.*\)|disponible$/$livre_id|\1|emprunte/" livres.txt
-
-    echo " Le livre « $titre » a été emprunté avec succès."
+    echo "Le livre « $titre » a été retourné et est maintenant disponible."
 }
-
 
 #fonction pour verifier si le livre existe et est disponible
 livre_existe() {
@@ -254,68 +320,6 @@ obtenir_id_par_titre() {
     grep -i "|$titre|" livres.txt | head -n 1 | cut -d '|' -f1
 }
 
-
-#fonction pour retourner les livres
-
-retourner_livre() {
-    local choix livre_id titre ligne emprunteur date_emprunt date_retour_reelle
-
-    echo "Rechercher le livre à retourner par :"
-    echo "1) ID"
-    echo "2) Titre"
-    read -p "Votre choix (1 ou 2) : " choix
-
-    if [ "$choix" = "1" ]; then
-        read -p "Donnez l'ID du livre : " livre_id
-        ligne=$(grep "^$livre_id|" emprunts.txt)
-
-        if [ -z "$ligne" ]; then
-            echo "Aucun emprunt trouvé avec cet ID."
-            return
-        fi
-
-        titre=$(grep "^$livre_id|" livres.txt | cut -d '|' -f2 | tr -d '\r\n')
-
-
-    elif [ "$choix" = "2" ]; then
-        read -p "Donnez le titre du livre : " titre_input
-        livre_id=$(grep "|$titre_input|" livres.txt | cut -d '|' -f1)
-
-        if [ -z "$livre_id" ]; then
-            echo "Aucun livre trouvé avec ce titre."
-            return
-        fi
-
-        ligne=$(grep "^$livre_id|" emprunts.txt)
-        if [ -z "$ligne" ]; then
-            echo "Ce livre n'est actuellement pas emprunté."
-            return
-        fi
-
-        titre=$(echo "$titre_input" | tr -d '\r\n')
-
-    else
-        echo "Choix invalide."
-        return
-    fi
-
-    # Récupération des infos de l'emprunt
-
-    emprunteur=$(echo "$ligne" | cut -d '|' -f2)
-    date_emprunt=$(echo "$ligne" | cut -d '|' -f3)
-    date_retour_reelle=$(date +"%Y-%m-%d")
-
-    # Ajouter à l'historique
-    echo "$livre_id|$emprunteur|$date_emprunt|$date_retour_reelle" >> historique.txt
-
-    # Retirer des emprunts en cours
-    grep -v "^$livre_id|" emprunts.txt > tmp && mv tmp emprunts.txt
-
-    # Remettre le livre comme disponible
-    sed -i "s/^$livre_id|\(.*\)|emprunté$/$livre_id|\1|disponible/" livres.txt
-
-    echo "Le livre « $titre » a été retourné avec succès."
-}
 
 
 #fonction pour lister les emprunts en cours
@@ -353,6 +357,7 @@ historique_emprunts() {
     fi
     column -t -s '|' historique.txt
 }
+
 
 
 
