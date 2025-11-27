@@ -69,7 +69,7 @@ while true; do
             echo "2. Répartition par genre (ASCII)"
             echo "3. Top 5 auteurs"
             echo "4. Livres par décennie"
-            echo "5. Export en HTM"
+            echo "5. Export en HTML"
             echo "0. Retour"
             read -p "Choix : " c3
 
