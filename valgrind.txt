@@ -1,0 +1,10 @@
+
+==22801== LEAK SUMMARY:
+==22801==    definitely lost: 0 bytes in 0 blocks
+==22801==    indirectly lost: 0 bytes in 0 blocks
+==22801==      possibly lost: 712 bytes in 9 blocks
+==22801==    still reachable: 142,317 bytes in 449 blocks
+==22801==         suppressed: 0 bytes in 0 blocks
+==22801== 
+==22801== For lists of detected and suppressed errors, rerun with: -s
+==22801== ERROR SUMMARY: 1673808 errors from 139 contexts (suppressed: 0 from 0)
